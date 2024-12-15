@@ -2,6 +2,33 @@ provider "aws" {
   region = "us-east-1"  # Update as per your desired region
 }
 
+# VPC Peering Connection
+resource "aws_vpc_peering_connection" "vpc_peering" {
+  vpc_id        = "vpc-0feb480adeeba0347" # Replace with your Master EC2 VPC ID (172.31.0.0/16)
+  peer_vpc_id   = aws_vpc.database_vpc.id
+  auto_accept   = true
+  peer_region   = "us-east-1"
+
+  tags = {
+    Name = "Master-Database-VPC-Peering"
+  }
+}
+
+# Route Table for Master EC2 VPC to route traffic to Database VPC
+resource "aws_route" "master_to_database" {
+  route_table_id         = "rtb-04dd6c158fec5d70c" # Replace with your Master EC2 VPC route table ID
+  destination_cidr_block = "10.0.0.0/16"  # CIDR of Database VPC
+  vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
+}
+
+# Route Table for Database VPC to route traffic to Master EC2 VPC
+resource "aws_route" "database_to_master" {
+  route_table_id         = aws_route_table.private_route_table.id
+  destination_cidr_block = "172.31.0.0/16"  # CIDR of Master EC2 VPC
+  vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
+}
+
+
 # Create VPC for Database
 resource "aws_vpc" "database_vpc" {
   cidr_block           = "10.0.0.0/16"
