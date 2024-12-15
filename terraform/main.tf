@@ -2,6 +2,17 @@ provider "aws" {
   region = "us-east-1"  # Update as per your desired region
 }
 
+resource "aws_vpc_peering_connection" "vpc_peering" {
+  peer_region = null  # Remove or set to null if auto_accept is true
+  auto_accept = true
+  ...
+}
+
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+  ...
+}
+
 # VPC Peering Connection
 resource "aws_vpc_peering_connection" "vpc_peering" {
   vpc_id        = "vpc-0feb480adeeba0347" # Replace with your Master EC2 VPC ID (172.31.0.0/16)
