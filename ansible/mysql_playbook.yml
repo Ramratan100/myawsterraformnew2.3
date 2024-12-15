@@ -1,0 +1,31 @@
+---
+- name: Configure MySQL Server
+  hosts: mysql
+  become: yes
+  tasks:
+    - name: Install MySQL
+      apt:
+        name: mysql-server
+        state: present
+        update_cache: yes
+
+    - name: Create Database and User
+      mysql_user:
+        name: web_user
+        password: password
+        priv: "*.*:ALL"
+        host: "%"
+        state: present
+
+    - name: Create Database
+      mysql_db:
+        name: testdb
+        state: present
+
+    - name: Create Sample Table
+      mysql_query:
+        login_user: root
+        query: |
+          USE testdb;
+          CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100));
+          INSERT INTO users (name) VALUES ('Test User');

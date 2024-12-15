@@ -1,0 +1,22 @@
+---
+- name: Configure Bastion Host
+  hosts: bastion
+  become: yes
+  tasks:
+    - name: Install Apache and PHP
+      apt:
+        name:
+          - apache2
+          - php
+          - libapache2-mod-php
+          - php-mysql
+        state: present
+        update_cache: yes
+
+    - name: Deploy PHP test scripts
+      copy:
+        dest: /var/www/html/
+        content: |
+          <?php
+          phpinfo();
+          ?>
