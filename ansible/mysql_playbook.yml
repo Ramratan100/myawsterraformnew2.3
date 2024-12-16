@@ -1,151 +1,45 @@
 ---
-- name: Configure MySQL Server
-  hosts: mysql
+- name: Install and Configure MySQL Server
+  hosts: mysql_instance  # Change this to your MySQL host or group
   become: yes
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
-    mysql_root_password: 'root'  # Set the root password for MySQL
 
   tasks:
-    - name: Stop MySQL service if running
-      service:
-        name: mysql
-        state: stopped
-      ignore_errors: yes
-
-    - name: Remove MySQL packages
-      apt:
-        name:
-          - mysql-server
-          - mysql-client
-          - mysql-common
-        state: absent
-        purge: yes
-
-    - name: Remove MySQL configuration and data files
-      file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /etc/mysql
-        - /var/lib/mysql
-
-    - name: Remove MySQL user and group
-      user:
-        name: mysql
-        state: absent
-      ignore_errors: yes
-
-    - name: Clean up unused packages
-      apt:
-        autoremove: yes
-        autoclean: yes
-
-    - name: Update package index
+    - name: Update package list
       apt:
         update_cache: yes
+        cache_valid_time: 3600  # Cache validity in seconds
 
     - name: Install MySQL server
       apt:
         name: mysql-server
         state: present
 
-    - name: Install pip3 if not installed
-      apt:
-        name: python3-pip
-        state: present
-        update_cache: yes
-
-    - name: Install required MySQL Python module
-      pip:
-        name: PyMySQL
-        state: present
-      become: yes
-
-    - name: Set the root password and configure MySQL authentication method
-      mysql_user:
-        name: root
-        password: "{{ mysql_root_password }}"
-        host: localhost
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-        state: present
-        priv: "*.*:ALL"
-        login_password: "{{ mysql_root_password }}"
-      become: yes
-
-    - name: Change MySQL authentication method for root user
-      mysql_user:
-        name: root
-        password: "{{ mysql_root_password }}"
-        host: localhost
-        state: present
-        login_password: "{{ mysql_root_password }}"
-        authentication_plugin: mysql_native_password
-      become: yes
-
-    - name: Wait for MySQL to start
-      wait_for:
-        port: 3306
-        delay: 10
-        timeout: 60
-
-    - name: Secure MySQL installation
-      expect:
-        command: mysql_secure_installation
-        responses:
-          'Enter password for user root:': "{{ mysql_root_password }}"
-          'Set root password? [Y/n]': 'Y'
-          'New password:': "{{ mysql_root_password }}"
-          'Re-enter new password:': "{{ mysql_root_password }}"
-          'Remove anonymous users? [Y/n]': 'Y'
-          'Disallow root login remotely? [Y/n]': 'Y'
-          'Remove test database and access to it? [Y/n]': 'Y'
-          'Reload privilege tables now? [Y/n]': 'Y'
-      become: yes
-      timeout: 60
-
-    - name: Restart MySQL service
-      service:
+    - name: Enable MySQL service
+      systemd:
         name: mysql
-        state: restarted
+        enabled: yes
 
-    - name: Ensure MySQL is running
-      service:
+    - name: Start MySQL service
+      systemd:
         name: mysql
         state: started
 
-    - name: Grant privileges to root user (ensure root can grant permissions)
+    - name: Create 'nat_user' user for specific IP range
       mysql_user:
-        name: root
-        host: localhost
-        password: "{{ mysql_root_password }}"
-        priv: "*.*:ALL"
+        name: nat_user
+        password: 'password'
+        host: '10.0.2.%'
+        priv: '*.*:ALL'
         state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
 
-    - name: Create Database and User
-      mysql_user:
-        name: web_user
-        password: password
-        priv: "*.*:ALL"
-        host: "%"
-        state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-
-    - name: Create Database
+    - name: Flush MySQL privileges
       mysql_db:
-        name: testdb
-        state: present
+        name: "*"
+        state: import
         login_user: root
-        login_password: "{{ mysql_root_password }}"
+        login_password: 'root'  # Replace with the root password, or use a vault
 
-    - name: Create Sample Table
-      mysql_query:
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-        query: |
-          USE testdb;
-          CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100));
-          INSERT INTO users (name) VALUES ('Test User');
+    - name: Restart MySQL service
+      systemd:
+        name: mysql
+        state: restarted
