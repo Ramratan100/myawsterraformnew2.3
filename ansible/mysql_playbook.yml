@@ -3,6 +3,10 @@
   hosts: mysql_instance
   become: yes
 
+  vars:
+    mysql_root_password: "your_secure_password"
+    nat_user_password: "password"
+
   tasks:
     - name: Ensure pip3 is installed
       apt:
@@ -37,26 +41,23 @@
 
     - name: Change MySQL root authentication method to use password
       shell: |
-        sudo mysql <<EOF
-        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_root_password';
+        mysql -u root <<EOF
+        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}';
         FLUSH PRIVILEGES;
         EOF
+      args:
+        warn: false
+      ignore_errors: yes  # Allow flexibility in case authentication method is already updated.
 
     - name: Create 'nat_user' user for specific IP range
       mysql_user:
         name: nat_user
-        password: 'password'
+        password: "{{ nat_user_password }}"
         host: '10.0.2.%'
         priv: '*.*:ALL'
         state: present
         login_user: root
-        login_password: 'your_root_password'
-
-    - name: Flush MySQL privileges
-      shell: |
-        sudo mysql <<EOF
-        FLUSH PRIVILEGES;
-        EOF
+        login_password: "{{ mysql_root_password }}"
 
     - name: Update MySQL configuration to allow connections from all IPs
       lineinfile:
