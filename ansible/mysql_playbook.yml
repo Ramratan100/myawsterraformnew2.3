@@ -2,6 +2,9 @@
 - name: Configure MySQL Server
   hosts: mysql
   become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3  # Specify the Python interpreter if needed
+
   tasks:
     - name: Stop MySQL service if running
       service:
@@ -45,6 +48,12 @@
       apt:
         name: mysql-server
         state: present
+
+    - name: Install required MySQL Python module
+      pip:
+        name: PyMySQL
+        state: present
+      become: yes  # Ensure pip installs the package as root
 
     - name: Wait for MySQL to start
       wait_for:
