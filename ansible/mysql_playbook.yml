@@ -4,6 +4,17 @@
   become: yes
 
   tasks:
+    - name: Ensure pip3 is installed
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Install PyMySQL for MySQL interaction
+      pip:
+        name: PyMySQL
+        state: present
+      become: yes
+
     - name: Update package list
       apt:
         update_cache: yes
@@ -31,6 +42,8 @@
         host: '10.0.2.%'
         priv: '*.*:ALL'
         state: present
+        login_user: root
+        login_password: 'root'  # Replace with the root password, or use a vault
 
     - name: Flush MySQL privileges
       mysql_db:
