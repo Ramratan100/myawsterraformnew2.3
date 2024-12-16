@@ -4,6 +4,7 @@
   become: yes
   vars:
     ansible_python_interpreter: /usr/bin/python3  # Specify the Python interpreter if needed
+    mysql_root_password: 'root_password'  # Set the root password for MySQL
 
   tasks:
     - name: Stop MySQL service if running
@@ -61,6 +62,16 @@
         state: present
       become: yes  # Ensure pip installs the package as root
 
+    - name: Set the root password and configure MySQL authentication method
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        host: localhost
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        state: present
+        priv: "*.*:ALL"
+        login_password: "{{ mysql_root_password }}"
+
     - name: Wait for MySQL to start
       wait_for:
         port: 3306
@@ -91,15 +102,20 @@
         priv: "*.*:ALL"
         host: "%"
         state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"  # Use root password here
 
     - name: Create Database
       mysql_db:
         name: testdb
         state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"  # Use root password here
 
     - name: Create Sample Table
       mysql_query:
         login_user: root
+        login_password: "{{ mysql_root_password }}"  # Use root password here
         query: |
           USE testdb;
           CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100));
