@@ -45,7 +45,7 @@
         FLUSH PRIVILEGES;
         EOF
       become: yes
-      ignore_errors: yes  # Allow task to proceed if already applied.
+      ignore_errors: yes
 
     - name: Create MySQL credentials file for root
       copy:
@@ -54,7 +54,9 @@
           [client]
           user = root
           password = "{{ mysql_root_password }}"
-      mode: '0600'
+        owner: root
+        group: root
+        mode: '0600'
 
     - name: Create 'nat_user' user for specific IP range
       mysql_user:
