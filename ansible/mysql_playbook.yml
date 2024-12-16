@@ -52,6 +52,13 @@
         login_user: root
         login_password: 'root'
 
+    - name: Update MySQL configuration to allow connections from all IPs
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf  # Path to MySQL config file
+        regexp: '^#?bind-address'
+        line: 'bind-address = 0.0.0.0'
+        state: present
+
     - name: Restart MySQL service
       systemd:
         name: mysql
