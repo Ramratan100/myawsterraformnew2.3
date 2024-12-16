@@ -3,6 +3,7 @@
   hosts: mysql_instance
   become: yes
 
+  task:
     - name: Update package list
       apt:
         update_cache: yes
