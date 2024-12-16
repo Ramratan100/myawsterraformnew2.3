@@ -43,14 +43,14 @@
         priv: '*.*:ALL'
         state: present
         login_user: root
-        login_password: 'root'  # Replace with the root password, or use a vault
+        login_password: 'root'
 
     - name: Flush MySQL privileges
       mysql_db:
         name: "*"
         state: import
         login_user: root
-        login_password: 'root'  # Replace with the root password, or use a vault
+        login_password: 'root'
 
     - name: Restart MySQL service
       systemd:
