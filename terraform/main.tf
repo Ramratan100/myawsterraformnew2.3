@@ -182,6 +182,14 @@ resource "aws_instance" "bastion_host" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
 
+user_data = <<-EOF
+    #!/bin/bash
+    # Update system and install Ansible dependencies
+    sudo apt-get update -y
+    sudo apt-get install -y python3 python3-pip
+    sudo pip3 install boto3
+  EOF
+
   tags = {
     Name = "Bastion-Host"
   }
@@ -193,6 +201,14 @@ resource "aws_instance" "mysql_instance" {
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.private_subnet_database.id
   vpc_security_group_ids = [aws_security_group.mysql_sg.id]
+
+user_data = <<-EOF
+    #!/bin/bash
+    # Update system and install Ansible dependencies
+    sudo apt-get update -y
+    sudo apt-get install -y python3 python3-pip
+    sudo pip3 install boto3
+  EOF
 
   tags = {
     Name = "MySQL-Instance"
