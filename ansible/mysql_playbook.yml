@@ -4,8 +4,8 @@
   become: yes
 
   vars:
-    mysql_root_password: "your_secure_password"
-    nat_user_password: "password"
+    mysql_root_password: "your_secure_password"  # Replace with actual root password
+    nat_user_password: "password"  # Replace with desired 'nat_user' password
 
   tasks:
     - name: Ensure pip3 is installed
@@ -38,14 +38,22 @@
         name: mysql
         state: started
 
+    - name: Set MySQL root password and authentication method
+      shell: |
+        sudo mysql <<EOF
+        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}';
+        FLUSH PRIVILEGES;
+        EOF
+      args:
+        executable: /bin/bash
+
     - name: Create 'nat_user' user for specific IP range
       shell: |
-        mysql -u root <<EOF
+        mysql -u root -p'{{ mysql_root_password }}' <<EOF
         CREATE USER 'nat_user'@'10.0.2.%' IDENTIFIED BY '{{ nat_user_password }}';
         GRANT ALL PRIVILEGES ON *.* TO 'nat_user'@'10.0.2.%' WITH GRANT OPTION;
         FLUSH PRIVILEGES;
         EOF
-      become: yes
       args:
         executable: /bin/bash
 
