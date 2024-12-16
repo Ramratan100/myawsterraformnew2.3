@@ -4,7 +4,6 @@
   become: yes
 
   vars:
-    mysql_root_password: "your_secure_password"  # Replace with actual root password
     nat_user_password: "password"  # Replace with desired 'nat_user' password
 
   tasks:
