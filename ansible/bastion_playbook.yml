@@ -13,10 +13,26 @@
         state: present
         update_cache: yes
 
-    - name: Deploy PHP test scripts
-      copy:
-        dest: /var/www/html/test.php  # Ensure it's a specific file
-        content: |
-          <?php
-          phpinfo();
-          ?>
+    - name: Set up phpinfo() page
+      shell: |
+        echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/index.php
+      args:
+        executable: /bin/bash
+      become: yes
+
+    - name: Set up MySQL connection test page
+      shell: |
+        echo "<?php 
+        \$conn = new mysqli('10.0.1.X', 'web_user', 'password', 'mysql');
+        if (\$conn->connect_error) { die('Connection failed: ' . \$conn->connect_error); }
+        echo 'Connected successfully';
+        ?>" | sudo tee /var/www/html/test.php
+      args:
+        executable: /bin/bash
+      become: yes
+
+    - name: Ensure Apache service is started and enabled
+      systemd:
+        name: apache2
+        state: started
+        enabled: yes
