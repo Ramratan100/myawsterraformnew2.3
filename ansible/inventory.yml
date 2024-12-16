@@ -1,1 +1,13 @@
+all:
+  children:
+    bastion:
+      hosts:
+        bastion_host:
+          ansible_host: 3.89.26.189  # Replace with your bastion host public IP
+          ansible_user: ubuntu       # SSH user for the bastion host
+    mysql:
+      hosts:
+        mysql_instance:
+          ansible_host: 10.0.1.149  # Replace with your MySQL instance private IP
+          ansible_user: ubuntu       # SSH user for the MySQL instance
 
