@@ -3,11 +3,71 @@
   hosts: mysql
   become: yes
   tasks:
-    - name: Install MySQL
+    - name: Stop MySQL service if running
+      service:
+        name: mysql
+        state: stopped
+      ignore_errors: yes  # Ignore errors if MySQL is not installed
+
+    - name: Remove MySQL packages
+      apt:
+        name:
+          - mysql-server
+          - mysql-client
+          - mysql-common
+        state: absent
+        purge: yes
+
+    - name: Remove MySQL configuration and data files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/mysql
+        - /var/lib/mysql
+
+    - name: Remove MySQL user and group
+      user:
+        name: mysql
+        state: absent
+      ignore_errors: yes  # Ignore errors if user/group does not exist
+
+    - name: Clean up unused packages
+      apt:
+        autoremove: yes
+        autoclean: yes
+
+    - name: Update package index
+      apt:
+        update_cache: yes
+
+    - name: Install MySQL server
       apt:
         name: mysql-server
         state: present
-        update_cache: yes
+
+    - name: Wait for MySQL to start
+      wait_for:
+        port: 3306
+        delay: 10
+        timeout: 60
+
+    - name: Secure MySQL installation
+      command: mysql_secure_installation
+      args:
+        warn: false
+      register: mysql_secure_installation
+      ignore_errors: yes  # Ignore errors if mysql_secure_installation is not interactive
+
+    - name: Restart MySQL service
+      service:
+        name: mysql
+        state: restarted
+
+    - name: Ensure MySQL is running
+      service:
+        name: mysql
+        state: started
 
     - name: Create Database and User
       mysql_user:
