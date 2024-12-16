@@ -1,22 +1,28 @@
 #!/bin/bash
 
-# Navigate to the Terraform directory
 cd "$(dirname "$0")"
 
-# Fetch Terraform outputs and generate YAML format directly
 output_bastion_host=$(terraform output -raw bastion_host_public_ip)
 output_mysql_ip=$(terraform output -raw mysql_instance_private_ip)
 
-# Write YAML to a file
-echo "bastion:" > ../ansible/inventory.yml
-echo "  hosts:" >> ../ansible/inventory.yml
-echo "    bastion_host:" >> ../ansible/inventory.yml
-echo "      ansible_host: $output_bastion_host" >> ../ansible/inventory.yml
-echo "      ansible_user: ubuntu" >> ../ansible/inventory.yml
-echo "mysql:" >> ../ansible/inventory.yml
-echo "  hosts:" >> ../ansible/inventory.yml
-echo "    mysql_instance:" >> ../ansible/inventory.yml
-echo "      ansible_host: $output_mysql_ip" >> ../ansible/inventory.yml
-echo "      ansible_user: ubuntu" >> ../ansible/inventory.yml
+if [ -z "$output_bastion_host" ] || [ -z "$output_mysql_ip" ]; then
+  echo "Error: Terraform outputs are missing. Ensure Terraform has been applied."
+  exit 1
+fi
 
-echo "Terraform outputs written to inventory.yml"
+# Generate YAML inventory
+cat <<EOF > ../ansible/inventory.yml
+bastion:
+  hosts:
+    bastion_host:
+      ansible_host: $output_bastion_host
+      ansible_user: ubuntu
+
+mysql:
+  hosts:
+    mysql_instance:
+      ansible_host: $output_mysql_ip
+      ansible_user: ubuntu
+EOF
+
+echo "Ansible inventory.yml has been successfully generated."
