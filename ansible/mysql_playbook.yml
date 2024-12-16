@@ -3,7 +3,7 @@
   hosts: mysql
   become: yes
   vars:
-    ansible_python_interpreter: /usr/bin/python3  # Specify the Python interpreter if needed
+    ansible_python_interpreter: /usr/bin/python3
     mysql_root_password: 'root_password'  # Set the root password for MySQL
 
   tasks:
@@ -11,7 +11,7 @@
       service:
         name: mysql
         state: stopped
-      ignore_errors: yes  # Ignore errors if MySQL is not installed
+      ignore_errors: yes
 
     - name: Remove MySQL packages
       apt:
@@ -34,7 +34,7 @@
       user:
         name: mysql
         state: absent
-      ignore_errors: yes  # Ignore errors if user/group does not exist
+      ignore_errors: yes
 
     - name: Clean up unused packages
       apt:
@@ -60,7 +60,7 @@
       pip:
         name: PyMySQL
         state: present
-      become: yes  # Ensure pip installs the package as root
+      become: yes
 
     - name: Set the root password and configure MySQL authentication method
       mysql_user:
@@ -79,10 +79,19 @@
         timeout: 60
 
     - name: Secure MySQL installation
-      command: mysql_secure_installation
-      args:
-        creates: /root/.mysql_history  # Ensure this task only runs once by checking if MySQL history exists
-      ignore_errors: yes  # Ignore errors if mysql_secure_installation is not interactive
+      expect:
+        command: mysql_secure_installation
+        responses:
+          'Enter current password for root (enter for none):': "{{ mysql_root_password }}"
+          'Set root password? [Y/n]': 'Y'
+          'New password:': "{{ mysql_root_password }}"
+          'Re-enter new password:': "{{ mysql_root_password }}"
+          'Remove anonymous users? [Y/n]': 'Y'
+          'Disallow root login remotely? [Y/n]': 'Y'
+          'Remove test database and access to it? [Y/n]': 'Y'
+          'Reload privilege tables now? [Y/n]': 'Y'
+      become: yes
+      ignore_errors: yes
 
     - name: Restart MySQL service
       service:
@@ -102,7 +111,7 @@
         priv: "*.*:ALL"
         state: present
         login_user: root
-        login_password: "{{ mysql_root_password }}"  # Use root password here
+        login_password: "{{ mysql_root_password }}"
 
     - name: Create Database and User
       mysql_user:
@@ -112,19 +121,19 @@
         host: "%"
         state: present
         login_user: root
-        login_password: "{{ mysql_root_password }}"  # Use root password here
+        login_password: "{{ mysql_root_password }}"
 
     - name: Create Database
       mysql_db:
         name: testdb
         state: present
         login_user: root
-        login_password: "{{ mysql_root_password }}"  # Use root password here
+        login_password: "{{ mysql_root_password }}"
 
     - name: Create Sample Table
       mysql_query:
         login_user: root
-        login_password: "{{ mysql_root_password }}"  # Use root password here
+        login_password: "{{ mysql_root_password }}"
         query: |
           USE testdb;
           CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100));
