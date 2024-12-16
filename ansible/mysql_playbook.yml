@@ -81,8 +81,7 @@
     - name: Secure MySQL installation
       command: mysql_secure_installation
       args:
-        warn: false
-      register: mysql_secure_installation
+        creates: /root/.mysql_history  # Ensure this task only runs once by checking if MySQL history exists
       ignore_errors: yes  # Ignore errors if mysql_secure_installation is not interactive
 
     - name: Restart MySQL service
@@ -103,7 +102,7 @@
         priv: "*.*:ALL"
         state: present
         login_user: root
-        login_password: "{{ mysql_root_password }}"
+        login_password: "{{ mysql_root_password }}"  # Use root password here
 
     - name: Create Database and User
       mysql_user:
