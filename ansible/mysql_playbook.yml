@@ -95,6 +95,16 @@
         name: mysql
         state: started
 
+    - name: Grant privileges to root user (ensure root can grant permissions)
+      mysql_user:
+        name: root
+        host: localhost
+        password: "{{ mysql_root_password }}"
+        priv: "*.*:ALL"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
     - name: Create Database and User
       mysql_user:
         name: web_user
