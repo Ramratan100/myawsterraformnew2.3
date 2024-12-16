@@ -2,6 +2,10 @@
 - name: Configure Bastion Host
   hosts: bastion
   become: yes
+  gather_facts: true
+  vars:
+    ansible_ssh_private_key_file: "/var/lib/jenkins/jenkins.pem"  
+    ansible_ssh_user: "ubuntu"
   tasks:
     - name: Install Apache and PHP
       apt:
