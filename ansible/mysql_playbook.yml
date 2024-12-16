@@ -17,7 +17,6 @@
       pip:
         name: PyMySQL
         state: present
-      become: yes
 
     - name: Update package list
       apt:
@@ -45,9 +44,17 @@
         ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}';
         FLUSH PRIVILEGES;
         EOF
-      args:
-        warn: false
-      ignore_errors: yes  # Allow flexibility in case authentication method is already updated.
+      become: yes
+      ignore_errors: yes  # Allow task to proceed if already applied.
+
+    - name: Create MySQL credentials file for root
+      copy:
+        dest: /root/.my.cnf
+        content: |
+          [client]
+          user = root
+          password = "{{ mysql_root_password }}"
+      mode: '0600'
 
     - name: Create 'nat_user' user for specific IP range
       mysql_user:
