@@ -49,6 +49,12 @@
         name: mysql-server
         state: present
 
+    - name: Install pip3 if not installed
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+
     - name: Install required MySQL Python module
       pip:
         name: PyMySQL
