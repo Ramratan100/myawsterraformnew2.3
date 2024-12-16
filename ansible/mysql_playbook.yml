@@ -71,6 +71,17 @@
         state: present
         priv: "*.*:ALL"
         login_password: "{{ mysql_root_password }}"
+      become: yes
+
+    - name: Change MySQL authentication method for root user
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        host: localhost
+        state: present
+        login_password: "{{ mysql_root_password }}"
+        authentication_plugin: mysql_native_password
+      become: yes
 
     - name: Wait for MySQL to start
       wait_for:
@@ -82,7 +93,7 @@
       expect:
         command: mysql_secure_installation
         responses:
-          'Enter current password for root (enter for none):': "{{ mysql_root_password }}"
+          'Enter password for user root:': "{{ mysql_root_password }}"
           'Set root password? [Y/n]': 'Y'
           'New password:': "{{ mysql_root_password }}"
           'Re-enter new password:': "{{ mysql_root_password }}"
@@ -91,7 +102,7 @@
           'Remove test database and access to it? [Y/n]': 'Y'
           'Reload privilege tables now? [Y/n]': 'Y'
       become: yes
-      ignore_errors: yes
+      timeout: 600
 
     - name: Restart MySQL service
       service:
