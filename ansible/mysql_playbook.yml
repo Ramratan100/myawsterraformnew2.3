@@ -4,7 +4,7 @@
   become: yes
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    mysql_root_password: 'root_password'  # Set the root password for MySQL
+    mysql_root_password: 'root'  # Set the root password for MySQL
 
   tasks:
     - name: Stop MySQL service if running
@@ -102,7 +102,7 @@
           'Remove test database and access to it? [Y/n]': 'Y'
           'Reload privilege tables now? [Y/n]': 'Y'
       become: yes
-      timeout: 600
+      timeout: 60
 
     - name: Restart MySQL service
       service:
