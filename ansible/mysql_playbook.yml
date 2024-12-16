@@ -1,14 +1,9 @@
 ---
 - name: Install and Configure MySQL Server
-  hosts: mysql_instance
+  hosts: mysql_instance  # Change this to your MySQL host or group
   become: yes
 
-  task:
-    - name: Update package list
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
+  tasks:
     - name: Ensure pip3 is installed
       apt:
         name: python3-pip
@@ -18,6 +13,12 @@
       pip:
         name: PyMySQL
         state: present
+      become: yes
+
+    - name: Update package list
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600  # Cache validity in seconds
 
     - name: Install MySQL server
       apt:
