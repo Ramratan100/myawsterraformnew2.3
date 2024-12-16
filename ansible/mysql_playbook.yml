@@ -35,6 +35,15 @@
         name: mysql
         state: started
 
+    - name: Change MySQL root authentication method to use password
+      shell: |
+        mysql -u root <<EOF
+        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_root_password';
+        FLUSH PRIVILEGES;
+        EOF
+      args:
+        creates: /var/lib/mysql/mysql.sock  # Only run this task if MySQL is running
+
     - name: Create 'nat_user' user for specific IP range
       mysql_user:
         name: nat_user
@@ -43,14 +52,14 @@
         priv: '*.*:ALL'
         state: present
         login_user: root
-        login_password: 'root'
+        login_password: 'your_root_password'
 
     - name: Flush MySQL privileges
       mysql_db:
         name: "*"
         state: import
         login_user: root
-        login_password: 'root'
+        login_password: 'your_root_password'
 
     - name: Update MySQL configuration to allow connections from all IPs
       lineinfile:
