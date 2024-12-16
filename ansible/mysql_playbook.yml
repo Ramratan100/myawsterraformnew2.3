@@ -38,35 +38,16 @@
         name: mysql
         state: started
 
-    - name: Change MySQL root authentication method to use password
+    - name: Create 'nat_user' user for specific IP range
       shell: |
         mysql -u root <<EOF
-        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}';
+        CREATE USER 'nat_user'@'10.0.2.%' IDENTIFIED BY '{{ nat_user_password }}';
+        GRANT ALL PRIVILEGES ON *.* TO 'nat_user'@'10.0.2.%' WITH GRANT OPTION;
         FLUSH PRIVILEGES;
         EOF
       become: yes
-      ignore_errors: yes
-
-    - name: Create MySQL credentials file for root
-      copy:
-        dest: /root/.my.cnf
-        content: |
-          [client]
-          user = root
-          password = "{{ mysql_root_password }}"
-        owner: root
-        group: root
-        mode: '0600'
-
-    - name: Create 'nat_user' user for specific IP range
-      mysql_user:
-        name: nat_user
-        password: "{{ nat_user_password }}"
-        host: '10.0.2.%'
-        priv: '*.*:ALL'
-        state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
+      args:
+        executable: /bin/bash
 
     - name: Update MySQL configuration to allow connections from all IPs
       lineinfile:
