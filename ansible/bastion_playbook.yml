@@ -15,7 +15,7 @@
 
     - name: Deploy PHP test scripts
       copy:
-        dest: /var/www/html/
+        dest: /var/www/html/test.php  # Ensure it's a specific file
         content: |
           <?php
           phpinfo();
