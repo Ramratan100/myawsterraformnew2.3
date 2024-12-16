@@ -3,9 +3,6 @@
   hosts: mysql_instance
   become: yes
 
-  vars:
-    nat_user_password: "password"  # Replace with desired 'nat_user' password
-
   tasks:
     - name: Ensure pip3 is installed
       apt:
@@ -46,7 +43,7 @@
 
     - name: Create 'nat_user' user for specific IP range
       shell: |
-        sudo mysql -e "CREATE USER 'nat_user'@'10.0.2.%' IDENTIFIED BY '{{ nat_user_password }}';"
+        sudo mysql -e "CREATE USER 'nat_user'@'10.0.2.%' IDENTIFIED BY 'password';"
         sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'nat_user'@'10.0.2.%';"
         sudo mysql -e "FLUSH PRIVILEGES;"
       args:
