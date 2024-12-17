@@ -1,15 +1,5 @@
 ---
-- name: Install and Configure MySQL Server
-  hosts: mysql_instance
-  become: yes
-
-  tasks:
-    - name: Install PyMySQL for MySQL interaction
-      pip:
-        name: PyMySQL
-        state: present
-      become: yes
-
+- task:
     - name: Update package list
       apt:
         update_cache: yes
