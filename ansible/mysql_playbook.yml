@@ -1,5 +1,9 @@
 ---
-- task:
+- name: Install and Configure MySQL Server
+  hosts: mysql_instance
+  become: yes
+
+  tasks:
     - name: Update package list
       apt:
         update_cache: yes
