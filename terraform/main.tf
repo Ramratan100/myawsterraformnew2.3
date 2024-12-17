@@ -282,14 +282,3 @@ resource "aws_lb_target_group_attachment" "mysql_instance_2" {
   target_id        = aws_instance.mysql_instance_2.id
   port             = 3306
 }
-
-# Outputs
-output "mysql_load_balancer_dns" {
-  description = "DNS of the MySQL load balancer"
-  value       = aws_lb.mysql_lb.dns_name
-}
-
-output "bastion_host_ip" {
-  description = "Public IP of Bastion Host"
-  value       = aws_instance.bastion_host.public_ip
-}
