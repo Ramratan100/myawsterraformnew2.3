@@ -232,7 +232,6 @@ resource "aws_ami" "mysql_instance_ami" {
   name                 = "mysql-instance-ami"
   source_instance_id   = aws_instance.mysql_instance.id
   description          = "AMI created from MySQL primary instance"
-  wait_for_image        = true
 
   tags = {
     Name = "MySQL-Instance-AMI"
