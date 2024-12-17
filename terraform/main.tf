@@ -227,13 +227,25 @@ resource "aws_instance" "mysql_instance" {
   }
 }
 
-# MySQL Instance (Secondary)
+# Create AMI from Primary MySQL Instance
+resource "aws_ami" "mysql_instance_ami" {
+  name                 = "mysql-instance-ami"
+  source_instance_id   = aws_instance.mysql_instance.id
+  description          = "AMI created from MySQL primary instance"
+  wait_for_image        = true
+
+  tags = {
+    Name = "MySQL-Instance-AMI"
+  }
+}
+
+# Secondary MySQL Instance (using the created AMI)
 resource "aws_instance" "mysql_instance_2" {
-  ami             = aws_ami.mysql_ami.id
+  ami             = aws_ami.mysql_instance_ami.id  # Use the AMI ID from the primary instance
   instance_type   = "t2.micro"
-  key_name        = "jenkins"
-  subnet_id       = aws_subnet.private_subnets[1].id
-  vpc_security_group_ids = [aws_security_group.mysql_sg.id]
+  key_name        = "jenkins"  # Replace with your key pair name
+  subnet_id       = aws_subnet.private_subnets[1].id  # Ensure correct subnet for secondary instance
+  vpc_security_group_ids = [aws_security_group.mysql_sg.id]  # Replace with your security group
 
   tags = {
     Name = "Secondary-MySQL-Instance"
