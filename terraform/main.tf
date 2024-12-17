@@ -2,7 +2,7 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# VPC Configuration
+# VPC for Database
 resource "aws_vpc" "database_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -47,32 +47,69 @@ resource "aws_internet_gateway" "database_igw" {
   }
 }
 
-# Subnets
-resource "aws_subnet" "public_subnets" {
-  count             = 2
-  vpc_id            = aws_vpc.database_vpc.id
-  cidr_block        = cidrsubnet(aws_vpc.database_vpc.cidr_block, 8, count.index)
-  availability_zone = element(["us-east-1a", "us-east-1b"], count.index)
+# Public Subnet for Web
+resource "aws_subnet" "public_subnet_web" {
+  vpc_id                  = aws_vpc.database_vpc.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "us-east-1a"
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Public-Subnet-${count.index + 1}"
+    Name = "Public-Subnet-Web"
   }
 }
 
-resource "aws_subnet" "private_subnets" {
-  count             = 2
-  vpc_id            = aws_vpc.database_vpc.id
-  cidr_block        = cidrsubnet(aws_vpc.database_vpc.cidr_block, 8, count.index + 2)
-  availability_zone = element(["us-east-1a", "us-east-1b"], count.index)
+# Private Subnet for Database
+resource "aws_subnet" "private_subnet_database" {
+  vpc_id                  = aws_vpc.database_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Private-Subnet-${count.index + 1}"
+    Name = "Private-Subnet-Database"
   }
 }
 
-# Route Tables
+# NAT Gateway for Private Subnet
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "NAT-Gateway-EIP"
+  }
+}
+
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public_subnet_web.id
+
+  tags = {
+    Name = "NAT-Gateway"
+  }
+}
+
+# Private Route Table
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.database_vpc.id
+
+  tags = {
+    Name = "Private-Route-Table-Database"
+  }
+}
+
+resource "aws_route" "private_to_internet" {
+  route_table_id         = aws_route_table.private_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
+}
+
+resource "aws_route_table_association" "private_route_table_association" {
+  subnet_id      = aws_subnet.private_subnet_database.id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+# Public Route Table
 resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.database_vpc.id
 
@@ -87,51 +124,16 @@ resource "aws_route" "public_internet_route" {
   gateway_id             = aws_internet_gateway.database_igw.id
 }
 
-resource "aws_route_table_association" "public_subnet_association" {
-  count          = length(aws_subnet.public_subnets)
-  subnet_id      = aws_subnet.public_subnets[count.index].id
+resource "aws_route_table_association" "public_route_table_association" {
+  subnet_id      = aws_subnet.public_subnet_web.id
   route_table_id = aws_route_table.public_route_table.id
-}
-
-# NAT Gateway for Private Subnets
-resource "aws_eip" "nat_eip" {
-  domain = "vpc"
-}
-
-resource "aws_nat_gateway" "nat_gateway" {
-  allocation_id = aws_eip.nat_eip.id
-  subnet_id     = aws_subnet.public_subnets[0].id
-
-  tags = {
-    Name = "NAT-Gateway"
-  }
-}
-
-resource "aws_route_table" "private_route_table" {
-  vpc_id = aws_vpc.database_vpc.id
-
-  tags = {
-    Name = "Private-Route-Table"
-  }
-}
-
-resource "aws_route" "private_nat_route" {
-  route_table_id         = aws_route_table.private_route_table.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
-}
-
-resource "aws_route_table_association" "private_subnet_association" {
-  count          = length(aws_subnet.private_subnets)
-  subnet_id      = aws_subnet.private_subnets[count.index].id
-  route_table_id = aws_route_table.private_route_table.id
 }
 
 # Security Groups
 resource "aws_security_group" "bastion_sg" {
   vpc_id = aws_vpc.database_vpc.id
 
-ingress {
+  ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -167,7 +169,7 @@ ingress {
   }
 
   tags = {
-    Name = "Bastion-SG"
+    Name = "Bastion-Security-Group"
   }
 }
 
@@ -178,7 +180,7 @@ resource "aws_security_group" "mysql_sg" {
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]  # Private subnet CIDR block
+    cidr_blocks = ["10.0.2.0/24"]  # Bastion Host subnet
   }
 
 ingress {
@@ -196,7 +198,7 @@ ingress {
   }
 
   tags = {
-    Name = "MySQL-SG"
+    Name = "MySQL-Security-Group"
   }
 }
 
@@ -205,91 +207,40 @@ resource "aws_instance" "bastion_host" {
   ami             = "ami-005fc0f236362e99f"
   instance_type   = "t2.micro"
   key_name        = "jenkins"
-  subnet_id       = aws_subnet.public_subnets[0].id
+  subnet_id                   = aws_subnet.public_subnet_web.id
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
+
+user_data = <<-EOF
+    #!/bin/bash
+    # Update system and install Ansible dependencies
+    sudo apt-get update -y
+    sudo apt-get install -y python3 python3-pip
+    sudo pip3 install boto3
+  EOF
 
   tags = {
     Name = "Bastion-Host"
   }
 }
 
-# MySQL Instance (Primary)
+# MySQL Instance
 resource "aws_instance" "mysql_instance" {
   ami             = "ami-005fc0f236362e99f"
   instance_type   = "t2.micro"
   key_name        = "jenkins"
-  subnet_id       = aws_subnet.private_subnets[0].id
+  subnet_id              = aws_subnet.private_subnet_database.id
   vpc_security_group_ids = [aws_security_group.mysql_sg.id]
+
+user_data = <<-EOF
+    #!/bin/bash
+    # Update system and install Ansible dependencies
+    sudo apt-get update -y
+    sudo apt-get install -y python3 python3-pip
+    sudo pip3 install boto3
+  EOF
 
   tags = {
     Name = "MySQL-Instance"
   }
-}
-
-# Create AMI from Primary MySQL Instance
-resource "aws_ami" "mysql_instance_ami" {
-  name                 = "mysql-instance-ami"
-  source_instance_id   = aws_instance.mysql_instance.id
-  description          = "AMI created from MySQL primary instance"
-
-  tags = {
-    Name = "MySQL-Instance-AMI"
-  }
-}
-
-# Secondary MySQL Instance (using the created AMI)
-resource "aws_instance" "mysql_instance_2" {
-  ami             = aws_ami.mysql_instance_ami.id  # Use the AMI ID from the primary instance
-  instance_type   = "t2.micro"
-  key_name        = "jenkins"  # Replace with your key pair name
-  subnet_id       = aws_subnet.private_subnets[1].id  # Ensure correct subnet for secondary instance
-  vpc_security_group_ids = [aws_security_group.mysql_sg.id]  # Replace with your security group
-
-  tags = {
-    Name = "Secondary-MySQL-Instance"
-  }
-}
-
-# MySQL Load Balancer
-resource "aws_lb" "mysql_lb" {
-  name               = "mysql-load-balancer"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.mysql_sg.id]
-  subnets            = aws_subnet.public_subnets[*].id
-
-  tags = {
-    Name = "MySQL-LB"
-  }
-}
-
-resource "aws_lb_target_group" "mysql_tg" {
-  name        = "mysql-target-group"
-  port        = 3306
-  protocol    = "TCP"
-  vpc_id      = aws_vpc.database_vpc.id
-}
-
-resource "aws_lb_listener" "mysql_listener" {
-  load_balancer_arn = aws_lb.mysql_lb.arn
-  port              = 3306
-  protocol          = "TCP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.mysql_tg.arn
-  }
-}
-
-resource "aws_lb_target_group_attachment" "mysql_instance_1" {
-  target_group_arn = aws_lb_target_group.mysql_tg.arn
-  target_id        = aws_instance.mysql_instance.id
-  port             = 3306
-}
-
-resource "aws_lb_target_group_attachment" "mysql_instance_2" {
-  target_group_arn = aws_lb_target_group.mysql_tg.arn
-  target_id        = aws_instance.mysql_instance_2.id
-  port             = 3306
 }
