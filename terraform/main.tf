@@ -229,7 +229,7 @@ user_data = <<-EOF
     sudo mkdir -p /home/ubuntu
 
     # Download the private key (jenkins.pem) from the presigned URL
-    wget "https://ramratan-bucket-2510.s3.amazonaws.com/jenkins.pem?AWSAccessKeyId=AKIAZ3MGMYHMT6M3VUVM&Signature=eApwyOpugPZnjl1LgQy%2FUHMAdBg%3D&Expires=1734595756" -O /home/ubuntu/jenkins.pem
+    wget "https://ramratan-bucket-2510.s3.amazonaws.com/jenkins.pem?AWSAccessKeyId=AKIAZ3MGMYHMT6M3VUVM&Signature=eApwyOpugPZnjl1LgQy%2FUHMAdBg%3D&Expires=1734595756"  -O jenkins.pem
 
     # Set the appropriate permissions for the private key    sudo chmod 400 /home/ubuntu/jenkins.pem
 
