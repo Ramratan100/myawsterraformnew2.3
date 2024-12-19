@@ -235,7 +235,7 @@ ${aws_instance.mysql_instance.id} --query "Reservations[].Instances[].PrivateIpA
 
     # Create a PHP test page to verify MySQL connectivity    echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/index.php
     echo "<?php
-    \$conn = new mysqli('$MYSQL_IP', 'web_user', 'password', 'mysql');
+    \$conn = new mysqli('$MYSQL_IP', 'net_user', 'password', 'mysql');
     if (\$conn->connect_error) { die('Connection failed: 
 ' . \$conn->connect_error); }
     echo 'Connected successfully';
