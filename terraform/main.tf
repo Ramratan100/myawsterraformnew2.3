@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-northeast-1"
 }
 
 # VPC for Database
@@ -213,7 +213,7 @@ ingress {
 resource "aws_instance" "bastion_host" {
   ami             = "ami-005fc0f236362e99f"
   instance_type   = "t2.micro"
-  key_name        = "jenkins"
+  key_name        = "tokyojenkins"
   subnet_id                   = aws_subnet.public_subnet_web.id
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
@@ -268,7 +268,7 @@ EOF
 resource "aws_instance" "mysql_instance" {
   ami             = "ami-005fc0f236362e99f"
   instance_type   = "t2.micro"
-  key_name        = "jenkins"
+  key_name        = "tokyojenkins"
   subnet_id              = aws_subnet.private_subnet_database.id
   vpc_security_group_ids = [aws_security_group.mysql_sg.id]
 
