@@ -211,7 +211,7 @@ ingress {
 
 # Bastion Host Instance
 resource "aws_instance" "bastion_host" {
-  ami             = "ami-005fc0f236362e99f"
+  ami             = "ami-0ac6b9b2908f3e20d"
   instance_type   = "t2.micro"
   key_name        = "tokyojenkins"
   subnet_id                   = aws_subnet.public_subnet_web.id
@@ -266,7 +266,7 @@ EOF
 
 # MySQL Instance
 resource "aws_instance" "mysql_instance" {
-  ami             = "ami-005fc0f236362e99f"
+  ami             = "ami-0ac6b9b2908f3e20d"
   instance_type   = "t2.micro"
   key_name        = "tokyojenkins"
   subnet_id              = aws_subnet.private_subnet_database.id
