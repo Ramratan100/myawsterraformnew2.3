@@ -31,10 +31,10 @@
         line: 'bind-address = 0.0.0.0'
         state: present
 
-    - name: Create 'nat_user' user for specific IP range
+    - name: Create 'web_user' user for specific IP range
       shell: |
         sudo mysql -e "CREATE USER 'nat_user'@'10.0.1.%' IDENTIFIED BY 'password';"
-        sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'nat_user'@'10.0.1.%';"
+        sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'web_user'@'10.0.1.%';"
         sudo mysql -e "FLUSH PRIVILEGES;"
       args:
         executable: /bin/bash
